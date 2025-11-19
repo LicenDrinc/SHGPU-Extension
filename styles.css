@@ -42,6 +42,16 @@ body {
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
+#page-content {
+	background: linear-gradient(135deg, #44a561 0%, #186910 100%) !important;
+}
+
+#region-main,
+#region-main-box,
+.card-body {
+	background: transparent !important;
+}
+
 #back-to-top {
 	border-radius: 50% !important;
 	height: 50px !important;
@@ -50,6 +60,8 @@ body {
 
 .card {
 	border-radius: 16px !important;
+	backdrop-filter: blur(4px) !important;
+	background: #ffffff70 !important;
 }
 
 .noselect {
