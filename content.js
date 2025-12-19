@@ -90,7 +90,7 @@ function rebuildHeader() {
 	const id = "page-header";
 	const body = '<div class="card-body ">';
 	const bodyEnd = `<div id="course-header">
-                        
+						
                     </div>`;
 	const headerbkg = '<div class="headerbkg">';
 	const imageConst = '//edu.shspu.ru/pluginfile.php/';
@@ -118,6 +118,27 @@ function rebuildHeader() {
 	const positionSRCEnd = customHTML.indexOf('"', positionSRC + 1);
 	const imageURL = customHTML.substring(positionSRC, positionSRCEnd);
 
+	// Простое формирование ссылки на оценки
+	let gradesUrl = '/grade/report/overview/index.php';
+	let isCoursePage = false;
+
+	// Проверяем, находимся ли мы на странице курса
+	const currentUrl = window.location.href;
+	if (currentUrl.includes('/course/view.php?id=')) {
+		// Заменяем часть URL для получения ссылки на оценки
+		gradesUrl = currentUrl.replace('/course/view.php', '/grade/report/user/index.php');
+		isCoursePage = true;
+	}
+	// Дополнительная проверка: если на странице с другим префиксом, но есть id курса
+	/*else {
+		const match = currentUrl.match(/id=(\d+)/);
+		if (match) {
+			const courseId = match[1];
+			gradesUrl = `/grade/report/user/index.php?id=${courseId}`;
+			isCoursePage = true;
+		}
+	}*/
+
 	if (positionSRC != -1) {
 		// Аватарка и ссылка на профиль
 		const positionHref = customHTML.indexOf('https://edu.shspu.ru/user/profile.php?id=');
@@ -140,120 +161,120 @@ function rebuildHeader() {
 	}
 
 	header.innerHTML = `
-    <div class="header-background"
-        style="background-image: url('${imageBackgroundURL}')">
-    </div>
-    <div class="header-content">
-        <div class="header-top">
-            ${positionSRC != -1 ? avatarHTML : ''}
-            <div class="quick-access-cards">
-                <a href="/grade/report/overview/index.php" class="access-card" title="Оценки">
-                    <div class="card-icon">
-                        <i class="fa fa-bar-chart"></i>
-                    </div>
-                    <span class="card-title">Оценки</span>
-                </a>
-                
-                <a href="https://shgpu-lms.web.app" class="access-card" title="SHGPU-LMS">
-                    <div class="card-icon">
-                        <i class="fa fa-cube"></i>
-                    </div>
-                    <span class="card-title">LMS</span>
-                </a>
-            </div>
-			${positionSRC == -1 ? avatarHTML : ''}
-        </div>
-    </div>
-    <style>
-        .header-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-size: cover;
-            background-position: center;
-            opacity: 0.7;
-            z-index: 0;
-        }
+		<div class="header-background"
+			style="background-image: url('${imageBackgroundURL}')">
+		</div>
+		<div class="header-content">
+			<div class="header-top">
+				${positionSRC != -1 ? avatarHTML : ''}
+				<div class="quick-access-cards">
+					<a href="${gradesUrl}" class="access-card" title="${isCoursePage ? 'Оценки текущего курса' : 'Общие оценки'}">
+						<div class="card-icon">
+							<i class="fa fa-bar-chart"></i>
+						</div>
+						<span class="card-title">${isCoursePage ? 'Оценки курса' : 'Оценки'}</span>
+					</a>
+					
+					<a href="https://shgpu-lms.web.app" class="access-card" title="SHGPU-LMS">
+						<div class="card-icon">
+							<i class="fa fa-cube"></i>
+						</div>
+						<span class="card-title">LMS</span>
+					</a>
+				</div>
+				${positionSRC == -1 ? avatarHTML : ''}
+			</div>
+		</div>
+		<style>
+			.header-background {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-size: cover;
+				background-position: center;
+				opacity: 0.7;
+				z-index: 0;
+			}
 
-        .header-content {
-            position: relative;
-            z-index: 1;
-            padding: 20px;
-            color: #fff;
-            border-radius: 10px;
-        }
+			.header-content {
+				position: relative;
+				z-index: 1;
+				padding: 20px;
+				color: #fff;
+				border-radius: 10px;
+			}
 
-        .header-top {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
+			.header-top {
+				display: flex;
+				align-items: center;
+				gap: 30px;
+			}
 
-        .user-profile {
-            display: flex;
-            align-items: center;
-        }
+			.user-profile {
+				display: flex;
+				align-items: center;
+			}
 
-        .user-avatar {
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        }
+			.user-avatar {
+				border-radius: 50%;
+				overflow: hidden;
+				border: 3px solid #fff;
+				box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+			}
 
-        .quick-access-cards {
-            display: flex;
-            gap: 15px;
-            max-flex-grow: 1;
-        }
+			.quick-access-cards {
+				display: flex;
+				gap: 15px;
+				max-flex-grow: 1;
+			}
 
-        .access-card,
-        .access-card-form button {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(5px);
-            border-radius: 12px;
-            padding: 10px;
-            text-decoration: none;
-            color: white;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            border: none;
-            font-family: inherit;
-            font-size: inherit;
-        }
+			.access-card,
+			.access-card-form button {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				width: 100px;
+				height: 100px;
+				background: rgba(255, 255, 255, 0.15);
+				backdrop-filter: blur(5px);
+				border-radius: 12px;
+				padding: 10px;
+				text-decoration: none;
+				color: white;
+				transition: all 0.3s ease;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				cursor: pointer;
+				border: none;
+				font-family: inherit;
+				font-size: inherit;
+			}
 
-        .access-card:hover,
-        .access-card-form button:hover {
-            background: rgba(255, 255, 255, 0.25);
-			transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-        }
+			.access-card:hover,
+			.access-card-form button:hover {
+				background: rgba(255, 255, 255, 0.25);
+				transform: translateY(-3px);
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+			}
 
-        .card-icon {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
+			.card-icon {
+				font-size: 24px;
+				margin-bottom: 8px;
+			}
 
-        .card-title {
-            font-size: 14px;
-            text-align: center;
-            font-weight: 500;
-        }
+			.card-title {
+				font-size: 14px;
+				text-align: center;
+				font-weight: 500;
+			}
 
-        .access-card-form {
-            display: contents;
-        }
-    </style>
-    `;
+			.access-card-form {
+				display: contents;
+			}
+		</style>
+	`;
 
 	log('The site header has been successfully flipped');
 }
@@ -529,26 +550,6 @@ function addSearch() {
                 gap: 6px;
             `;
 
-			const chatGPTButtonStyle = baseButtonStyle + `
-                background: #10a37f;
-                color: white;
-            `;
-
-			const geminiButtonStyle = baseButtonStyle + `
-                background: #4285F4;
-                color: white;
-            `;
-
-			const googleButtonStyle = baseButtonStyle + `
-                background: #f1f1f1;
-                color: #333;
-            `;
-
-			const yandexButtonStyle = baseButtonStyle + `
-                background: #fc3f1d;
-                color: white;
-            `;
-
 			const hoverStyle = `
                 transform: translateY(-1px);
                 box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
@@ -558,7 +559,7 @@ function addSearch() {
 			if (enabledEngines.includes('chatgpt')) {
 				const chatGPTButton = createSearchButton(
 					'ChatGPT',
-					chatGPTButtonStyle,
+					baseButtonStyle,
 					hoverStyle,
 					() => createAIModal(questionText, 'chatgpt')
 				);
@@ -568,7 +569,7 @@ function addSearch() {
 			if (enabledEngines.includes('gemini')) {
 				const geminiButton = createSearchButton(
 					'Gemini',
-					geminiButtonStyle,
+					baseButtonStyle,
 					hoverStyle,
 					() => createAIModal(questionText, 'gemini')
 				);
@@ -578,7 +579,7 @@ function addSearch() {
 			if (enabledEngines.includes('google')) {
 				const googleButton = createSearchButton(
 					'Google',
-					googleButtonStyle,
+					baseButtonStyle,
 					hoverStyle,
 					() => window.open(`https://www.google.com/search?q=${encodeURIComponent(questionText)}`, '_blank')
 				);
@@ -588,7 +589,7 @@ function addSearch() {
 			if (enabledEngines.includes('yandex')) {
 				const yandexButton = createSearchButton(
 					'Яндекс',
-					yandexButtonStyle,
+					baseButtonStyle,
 					hoverStyle,
 					() => window.open(`https://yandex.ru/search/?text=${encodeURIComponent(questionText)}`, '_blank')
 				);
@@ -808,11 +809,11 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
 });
 
 function init() {
+	rebuildHeader();
+	replaceText();
 	removeNavItems();
 	removeCards();
-	replaceText();
 	removeDrawerToggle();
-	rebuildHeader();
 	addSearch();
 }
 
