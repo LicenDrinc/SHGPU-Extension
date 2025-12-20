@@ -86,6 +86,10 @@ function rebuildHeader() {
 	const fpwonderbox = document.querySelector('.fpwonderbox');
 	fpwonderbox?.remove();
 
+	const headerContainer = document.getElementById('page-header');
+	if (!headerContainer) return;
+	const originalHTML = headerContainer.innerHTML;
+
 	// Подкатовка
 	const id = "page-header";
 	const body = '<div class="card-body ">';
@@ -95,21 +99,19 @@ function rebuildHeader() {
 	const headerbkg = '<div class="headerbkg">';
 	const imageConst = '//edu.shspu.ru/pluginfile.php/';
 	const imageDefault = "https://edu.shspu.ru/theme/image.php/fordson/core/1732519865/u/f1";
-	const origenalHTML = document.getElementById(id).innerHTML;
-	let avatarHTML = '';
 
 	// Задний фон
-	const positionHeaderbkg = origenalHTML.indexOf(headerbkg);
-	const positionHeaderbkgEnd = origenalHTML.indexOf('</div>', positionHeaderbkg + 1);
-	const customHTML2 = origenalHTML.substring(positionHeaderbkg, positionHeaderbkgEnd);
+	const positionHeaderbkg = originalHTML.indexOf(headerbkg);
+	const positionHeaderbkgEnd = originalHTML.indexOf('</div>', positionHeaderbkg + 1);
+	const customHTML2 = originalHTML.substring(positionHeaderbkg, positionHeaderbkgEnd);
 	const positionImageBackground = customHTML2.indexOf(imageConst);
 	const positionImageBackgroundEnd = customHTML2.indexOf(')', positionImageBackground + 1);
 	const imageBackgroundURL = customHTML2.substring(positionImageBackground, positionImageBackgroundEnd - 1);
 
 	// Информация в теле
-	const positionBody = origenalHTML.indexOf(body);
-	const positionBodyEnd = origenalHTML.indexOf(bodyEnd, positionBody + 1);
-	const customHTML = origenalHTML.substring(positionBody, positionBodyEnd);
+	const positionBody = originalHTML.indexOf(body);
+	const positionBodyEnd = originalHTML.indexOf(bodyEnd, positionBody + 1);
+	const customHTML = originalHTML.substring(positionBody, positionBodyEnd);
 
 	// Проверка аватарки
 	let positionSRC = customHTML.indexOf(imageConst);
@@ -121,6 +123,7 @@ function rebuildHeader() {
 	// Простое формирование ссылки на оценки
 	let gradesUrl = '/grade/report/overview/index.php';
 	let isCoursePage = false;
+	let courseId = null;
 
 	// Проверяем, находимся ли мы на странице курса
 	const currentUrl = window.location.href;
@@ -139,34 +142,115 @@ function rebuildHeader() {
 		}
 	}*/
 
-	if (positionSRC != -1) {
-		// Аватарка и ссылка на профиль
-		const positionHref = customHTML.indexOf('https://edu.shspu.ru/user/profile.php?id=');
-		const positionHrefEnd = customHTML.indexOf('"', positionHref + 1);
-		const hrefURL = customHTML.substring(positionHref, positionHrefEnd);
+	let avatarHTML = '';
+	let userAvatarFound = false;
 
-		avatarHTML = `
-		<div class="user-profile">
-			<a href = "${hrefURL}" class="user-avatar">
-				<img src="${imageURL}" alt="Аватар"
-					width="80" height="80">
-			</a>
-		</div>
-		`;
+	// Способ 1: Ищем в оригинальном HTML изображение пользователя
+	const avatarMatch = originalHTML.match(/user\/icon[^"']*\.(?:jpg|jpeg|png|gif|webp)[^"']*/i);
+	if (avatarMatch) {
+		const avatarUrl = `https://edu.shspu.ru/pluginfile.php/${avatarMatch[0]}`;
+		// Ищем ссылку на профиль
+		const profileMatch = originalHTML.match(/user\/profile\.php\?id=\d+/);
+		if (profileMatch) {
+			const profileUrl = `https://edu.shspu.ru/${profileMatch[0]}`;
+			avatarHTML = `
+                <div class="user-profile">
+                    <a href="${profileUrl}" class="user-avatar">
+                        <img src="${avatarUrl}" alt="Аватар" width="80" height="80">
+                    </a>
+                </div>
+            `;
+			userAvatarFound = true;
+		}
 	}
-	else {
-		// Название предмета
-		const name = customHTML + '</div></div>';
-		avatarHTML = name;
+
+	// Способ 2: Если не нашли, ищем по другим признакам
+	if (!userAvatarFound) {
+		// Ищем любую ссылку с пользовательским аватаром
+		const userImgMatch = originalHTML.match(/src="([^"]*user[^"]*icon[^"]*)"/i);
+		if (userImgMatch) {
+			const avatarUrl = userImgMatch[1];
+			// Ищем ссылку на профиль
+			const profileHrefMatch = originalHTML.match(/href="([^"]*profile\.php\?id=\d+[^"]*)"/i);
+			if (profileHrefMatch) {
+				avatarHTML = `
+                    <div class="user-profile">
+                        <a href="${profileHrefMatch[1]}" class="user-avatar">
+                            <img src="${avatarUrl}" alt="Аватар" width="80" height="80">
+                        </a>
+                    </div>
+                `;
+				userAvatarFound = true;
+			}
+		}
+	}
+
+	// Способ 3: Если это страница курса (без аватарки пользователя)
+	if (!userAvatarFound && isCoursePage) {
+		// Ищем название курса
+		const courseNameMatch = originalHTML.match(/<h1[^>]*>([^<]+)<\/h1>/);
+		if (courseNameMatch) {
+			const courseName = courseNameMatch[1].trim();
+			avatarHTML = `
+                <div class="course-title">
+                    <h1>${courseName}</h1>
+                </div>
+            `;
+		} else {
+			// Ищем любой заголовок курса
+			const headingMatch = originalHTML.match(/<div[^>]*class="[^"]*card-body[^"]*"[^>]*>([^<]+)<\/div>/);
+			if (headingMatch) {
+				avatarHTML = `
+                    <div class="course-title">
+                        <h2>${headingMatch[1].trim()}</h2>
+                    </div>
+                `;
+			}
+		}
+	}
+
+	// Ищем фоновое изображение
+	let backgroundImage = '';
+
+	// Ищем div с headerbkg или customimage
+	const headerBkgMatch = originalHTML.match(/<div[^>]*headerbkg[^>]*>([\s\S]*?)<\/div>/i);
+	if (headerBkgMatch) {
+		const headerBkgContent = headerBkgMatch[1];
+		// Ищем background-image в стилях
+		const bgStyleMatch = headerBkgContent.match(/background-image:\s*url\([^)]+\)/i);
+		if (bgStyleMatch) {
+			// Извлекаем URL из background-image
+			const urlMatch = bgStyleMatch[0].match(/url\(([^)]+)\)/i);
+			if (urlMatch) {
+				// Очищаем URL от кавычек и HTML-сущностей
+				backgroundImage = urlMatch[1]
+					.replace(/^["'`]|["'`]$/g, '') // Убираем кавычки в начале и конце
+					.replace(/&quot;/g, '') // Убираем HTML-сущности
+					.replace(/"/g, '') // Убираем двойные кавычки
+					.replace(/'/g, ''); // Убираем одинарные кавычки
+			}
+		}
+	}
+
+	// Если не нашли, ищем по-другому
+	if (!backgroundImage) {
+		// Ищем любую ссылку на pluginfile в контексте фона
+		const pluginFileMatch = originalHTML.match(/\/\/edu\.shspu\.ru\/pluginfile\.php\/\d+\/theme_fordson\/headerdefaultimage\/[^"']+/i);
+		if (pluginFileMatch) {
+			backgroundImage = pluginFileMatch[0];
+		}
+	}
+
+	// Если всё еще нет фона, используем дефолтный
+	if (!backgroundImage) {
+		backgroundImage = '//edu.shspu.ru/pluginfile.php/1/theme_fordson/headerdefaultimage/1758004895/shspu.jpg';
 	}
 
 	header.innerHTML = `
-		<div class="header-background"
-			style="background-image: url('${imageBackgroundURL}')">
-		</div>
+		<div class="header-background" style="background-image: url('${backgroundImage}')"></div>
 		<div class="header-content">
 			<div class="header-top">
-				${positionSRC != -1 ? avatarHTML : ''}
+				${userAvatarFound ? avatarHTML : ''}
 				<div class="quick-access-cards">
 					<a href="${gradesUrl}" class="access-card" title="${isCoursePage ? 'Оценки текущего курса' : 'Общие оценки'}">
 						<div class="card-icon">
@@ -182,7 +266,7 @@ function rebuildHeader() {
 						<span class="card-title">LMS</span>
 					</a>
 				</div>
-				${positionSRC == -1 ? avatarHTML : ''}
+				${!userAvatarFound && avatarHTML ? avatarHTML : ''}
 			</div>
 		</div>
 		<style>
